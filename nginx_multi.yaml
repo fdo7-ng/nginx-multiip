@@ -1,0 +1,85 @@
+---
+- hosts: all
+  vars:
+    directories:
+      - { dest: '/var/www/html/web1', mode: '755'}
+      - { dest: '/var/www/html/web2', mode: '755'}
+      - { dest: '/var/www/html/web3', mode: '755'}
+    webpages:
+      - { ipaddress: 192.168.0.60, webdirectory: '/var/www/html/web1', file: 'index.weburl1.html'}
+      - { ipaddress: 192.168.0.61, webdirectory: '/var/www/html/web2', file: 'index.weburl2.html'}
+      - { ipaddress: 192.168.0.62, webdirectory: '/var/www/html/web3', file: 'index.weburl3.html'}
+  tasks:
+    - name: ensure nginx is at the latest version
+      apt: name=nginx state=latest
+      become: yes
+    - name: start nginx
+      service:
+          name: nginx
+          state: started
+      become: yes
+    - name: copy the nginx config file and restart nginx
+      copy:
+        src: ./default   
+        dest: /etc/nginx/sites-enabled/default
+      become: yes
+    # - name: create symlink
+    #   file:
+    #     src: /etc/nginx/sites-available/static_site.cfg
+    #     dest: /etc/nginx/sites-enabled/default
+    #     state: link
+    #   become: yes
+    # - name: copy the content of the web site
+    #   copy:
+    #     src: /home/foo/static-site-src/
+    #     dest: /home/foo/static-site
+    # - name: create /var/www/html/web1 directory
+    #   file:
+    #     path: /var/www/html/web1
+    # - name: create /var/www/html/web2 directory
+    #   file:
+    #     path: /var/www/html/web2
+    # - name: create /var/www/html/web2 directory
+    #   file:
+    #     path: /var/www/html/web3
+    #     state: directory
+
+
+
+    # https://www.mydailytutorials.com/ansible-create-directory/
+    - name: Create Web Directories
+      file: 
+        path: "{{item.dest}}"
+        mode: "{{item.mode}}"
+        state: directory
+      become: yes
+      with_items: 
+        - "{{ directories }}"
+    - name: Copy Web files
+      copy:
+        src: ./html/web1/index.weburl1.html
+        dest: /var/www/html/web1/index.weburl1.html
+        mode: '644'
+      become: yes
+    - name: Copy Web files
+      copy:
+        src: ./html/web2/index.weburl2.html
+        dest: /var/www/html/web2/index.weburl2.html
+        mode: '644'
+      become: yes
+    - name: Copy Web files
+      copy:
+        src: ./html/web3/index.weburl3.html
+        dest: /var/www/html/web3/index.weburl3.html
+        mode: '644'
+      become: yes
+    - name: Config Nginx Default from J2
+      template:
+        src: ./templates/default_template.j2
+        dest: /etc/nginx/sites-enabled/default
+      become: yes
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes
